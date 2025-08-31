@@ -316,3 +316,56 @@ export async function deleteReaction(req: Request, res: Response) {
     });
   }
 }
+// GET /announcements/:id/reactions
+export async function getReactions(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { limit } = req.query;
+
+    const announcement = allann.find((c) => c.id === id);
+
+    if (!announcement) {
+      return res.status(404).json({
+        message: `Announcement with id ${id} not found`,
+      });
+    }
+
+    let reactions = announcement.reactions || [];
+
+    // Apply limit if provided
+    if (limit) {
+      const limitNum = parseInt(limit as string, 10);
+      if (isNaN(limitNum) || limitNum < 1) {
+        return res.status(400).json({
+          message: "Limit must be a positive number",
+        });
+      }
+      reactions = reactions.slice(0, limitNum);
+    }
+
+    // Sort reactions by creation date (newest first)
+    const sortedReactions = reactions.sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+    );
+
+    // Calculate reaction counts
+    const reactionCounts = {
+      up: reactions.filter((r) => r.type === "up").length,
+      down: reactions.filter((r) => r.type === "down").length,
+      heart: reactions.filter((r) => r.type === "heart").length,
+      total: reactions.length,
+    };
+
+    return res.status(200).json({
+      reactions: sortedReactions,
+      counts: reactionCounts,
+      success: true,
+      announcementId: id,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An unexpected error occurred",
+      error,
+    });
+  }
+}

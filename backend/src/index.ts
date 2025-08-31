@@ -8,6 +8,7 @@ import {
   getComments,
   addReaction,
   deleteReaction,
+  getReactions, // Add this import
 } from "./announcementstore";
 
 const PORT = process.env.PORT || 3000;
@@ -18,7 +19,7 @@ app.use(
   cors({
     origin: ["http://localhost:5173", "https://interview-gamma-six.vercel.app"],
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-    credentials: true, // if you need cookies/auth
+    credentials: true,
   })
 );
 
@@ -34,6 +35,7 @@ app.get("/announcements/:id/comments", getComments);
 app.post("/announcements/:id/comments", addComments);
 
 // Reaction routes
+app.get("/announcements/:id/reactions", getReactions);
 app.post("/announcements/:id/reactions", addReaction);
 app.delete("/announcements/:id/reactions", deleteReaction);
 
