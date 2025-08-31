@@ -5,7 +5,7 @@ export interface announcement {
   description?: String;
   status: "active" | "closed";
   comments?: Comment[];
-  reactions?: "up" | "down" | "heart";
+  reactions?: Reaction[]
   createdAt: Date;
 }
 
@@ -13,6 +13,13 @@ export interface Comment {
   author: string;
   text: string;
   createdAt: Date;
+}
+
+export interface Reaction {
+  userId: string;
+  type: "up" | "down" | "heart";
+  createdAt: Date;
+  idempotencyKey?: string;
 }
 
 export const allann: announcement[] = [];
@@ -158,4 +165,126 @@ export async function getComments(req: Request, res: Response) {
       success: true,
     });
   } catch (error) {}
+}
+
+
+
+// Reactions API 
+
+const idempotencyCache: Map<string, number> = new Map();
+
+// Clean expired keys every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, expiry] of idempotencyCache.entries()) {
+    if (expiry < now) {
+      idempotencyCache.delete(key);
+    }
+  }
+}, 60 * 1000);
+
+// POST /announcements/:id/reactions
+export async function addReaction(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { type } = req.body;
+    const userId = req.header("x-user-id");
+    const idempotencyKey = req.header("Idempotency-Key");
+
+    if (!userId) {
+      return res.status(400).json({ message: "Missing x-user-id header" });
+    }
+    if (!["up", "down", "heart"].includes(type)) {
+      return res.status(400).json({ message: "Invalid reaction type" });
+    }
+    if (!idempotencyKey) {
+      return res.status(400).json({ message: "Missing Idempotency-Key header" });
+    }
+
+    const cacheKey = `${id}:${userId}:${idempotencyKey}`;
+    const now = Date.now();
+
+    // Check idempotency within 5 min
+    if (idempotencyCache.has(cacheKey)) {
+      return res.status(200).json({ message: "Duplicate request ignored" });
+    }
+    idempotencyCache.set(cacheKey, now + 5 * 60 * 1000);
+
+    const announcement = allann.find((c) => c.id === id);
+    if (!announcement) {
+      return res.status(404).json({
+        message: `Announcement with id ${id} not found`,
+      });
+    }
+
+    if (!announcement.reactions) {
+      announcement.reactions = [];
+    }
+
+    // Remove old reaction by this user (only one reaction per user)
+    announcement.reactions = announcement.reactions.filter(
+      (r) => r.userId !== userId
+    );
+
+    const newReaction: Reaction = {
+      userId,
+      type,
+      createdAt: new Date(),
+      idempotencyKey,
+    };
+
+    announcement.reactions.push(newReaction);
+
+    console.log("Added reaction:", newReaction);
+
+    return res.status(201).json({
+      message: "Reaction added successfully",
+      announcement,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An unexpected error occurred",
+      error,
+    });
+  }
+}
+
+// DELETE /announcements/:id/reactions
+export async function deleteReaction(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const userId = req.header("x-user-id");
+
+    if (!userId) {
+      return res.status(400).json({ message: "Missing x-user-id header" });
+    }
+
+    const announcement = allann.find((c) => c.id === id);
+    if (!announcement) {
+      return res.status(404).json({
+        message: `Announcement with id ${id} not found`,
+      });
+    }
+
+    const beforeCount = announcement.reactions?.length || 0;
+    announcement.reactions = announcement.reactions?.filter(
+      (r) => r.userId !== userId
+    );
+
+    if (announcement.reactions?.length === beforeCount) {
+      return res.status(404).json({ message: "No reaction found for this user" });
+    }
+
+    console.log(`Removed reaction for user ${userId} on announcement ${id}`);
+
+    return res.json({
+      message: "Reaction removed successfully",
+      announcement,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An unexpected error occurred",
+      error,
+    });
+  }
 }

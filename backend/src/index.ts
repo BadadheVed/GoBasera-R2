@@ -19,7 +19,7 @@ app.use(express.json());
 app.get("/all", getAll);
 app.post("/add", addAnn);
 app.patch("/change/:id", changeStatus);
-app.get("/announcements/:id/comments?limit", getComments); // function to get paginated commens
+app.get("/announcements/:id/comments", getComments); // function to get paginated commens // removed limit
 app.post("/announcements/:id/comments", addComments); // function to add the comments
 
 app.listen(PORT, () => {
