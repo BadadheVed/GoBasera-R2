@@ -20,9 +20,15 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://interview-gamma-six.vercel.app",
-      "https://go-basera-r2.vercel.app",
+      "https://go-basera-r2.vercel.app", // ✅ your frontend
     ],
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], // ✅ must allow OPTIONS
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-user-id",
+      "Idempotency-Key",
+    ], // ✅ custom headers
     credentials: true,
   })
 );
