@@ -5,7 +5,7 @@ export interface announcement {
   description?: String;
   status: "active" | "closed";
   comments?: Comment[];
-  reactions?: Reaction[]
+  reactions?: Reaction[];
   createdAt: Date;
 }
 
@@ -52,13 +52,17 @@ export async function addAnn(req: Request, res: Response) {
     const { id, title, description, status } = req.body;
 
     if (!title) {
-      return res.json({
-        message: "Please enter teh title to continue adding",
+      return res.status(400).json({
+        message: "Please enter the title to continue adding",
       });
     }
 
+    // Generate ID if not provided
+    const announcementId =
+      id || Date.now().toString() + Math.random().toString(36).substr(2, 9);
+
     const newAnn: announcement = {
-      id: id,
+      id: announcementId,
       title: title,
       description: description,
       status: "active",
@@ -71,6 +75,7 @@ export async function addAnn(req: Request, res: Response) {
     return res.status(201).json({
       message: "Announcement added successfully",
       announcement: newAnn,
+      success: true,
     });
   } catch (error) {
     return res.status(500).json({
@@ -150,26 +155,45 @@ export async function getComments(req: Request, res: Response) {
   try {
     const { limit } = req.query;
     const { id } = req.params;
+
     if (!limit) {
-      return res.status(201).json({
-        message: "Enter the limit ",
+      return res.status(400).json({
+        message: "Enter the limit parameter",
       });
     }
+
     const announcement = allann.find((c) => c.id === id);
+
+    if (!announcement) {
+      return res.status(404).json({
+        message: `Announcement with id ${id} not found`,
+      });
+    }
+
     const newlimit = parseInt(limit as string, 10);
 
-    const comments = announcement?.comments?.slice(0, newlimit);
+    if (isNaN(newlimit) || newlimit < 1) {
+      return res.status(400).json({
+        message: "Limit must be a positive number",
+      });
+    }
 
-    return res.json({
+    const comments = announcement?.comments?.slice(0, newlimit) || [];
+
+    return res.status(200).json({
       comments: comments,
       success: true,
+      count: comments.length,
     });
-  } catch (error) {}
+  } catch (error) {
+    return res.status(500).json({
+      message: "An unexpected error occurred",
+      error,
+    });
+  }
 }
 
-
-
-// Reactions API 
+// Reactions API
 
 const idempotencyCache: Map<string, number> = new Map();
 
@@ -198,7 +222,9 @@ export async function addReaction(req: Request, res: Response) {
       return res.status(400).json({ message: "Invalid reaction type" });
     }
     if (!idempotencyKey) {
-      return res.status(400).json({ message: "Missing Idempotency-Key header" });
+      return res
+        .status(400)
+        .json({ message: "Missing Idempotency-Key header" });
     }
 
     const cacheKey = `${id}:${userId}:${idempotencyKey}`;
@@ -272,7 +298,9 @@ export async function deleteReaction(req: Request, res: Response) {
     );
 
     if (announcement.reactions?.length === beforeCount) {
-      return res.status(404).json({ message: "No reaction found for this user" });
+      return res
+        .status(404)
+        .json({ message: "No reaction found for this user" });
     }
 
     console.log(`Removed reaction for user ${userId} on announcement ${id}`);

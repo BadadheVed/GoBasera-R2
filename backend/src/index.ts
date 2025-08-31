@@ -1,7 +1,15 @@
 import express from "express";
 import cors from "cors";
-import { changeStatus, getAll, addAnn, addComments } from "./announcementstore";
-import { getComments } from "./announcementstore";
+import {
+  changeStatus,
+  getAll,
+  addAnn,
+  addComments,
+  getComments,
+  addReaction,
+  deleteReaction,
+} from "./announcementstore";
+
 const PORT = process.env.PORT || 3000;
 
 const app = express();
@@ -16,12 +24,19 @@ app.use(
 
 app.use(express.json());
 
+// Announcement routes
 app.get("/all", getAll);
 app.post("/add", addAnn);
 app.patch("/change/:id", changeStatus);
-app.get("/announcements/:id/comments", getComments); // function to get paginated commens // removed limit
-app.post("/announcements/:id/comments", addComments); // function to add the comments
+
+// Comment routes
+app.get("/announcements/:id/comments", getComments);
+app.post("/announcements/:id/comments", addComments);
+
+// Reaction routes
+app.post("/announcements/:id/reactions", addReaction);
+app.delete("/announcements/:id/reactions", deleteReaction);
 
 app.listen(PORT, () => {
-  console.log(`Listening on the port ${PORT}`);
+  console.log(`Listening on port ${PORT}`);
 });
