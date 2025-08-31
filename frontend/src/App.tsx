@@ -56,7 +56,7 @@ export default function App() {
   const handleAdd = async () => {
     const newId = nextId.toString();
 
-    const response = await fetch("http://localhost:3000/add", {
+    const response = await fetch("https://gobasera-r2.onrender.com/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,9 +78,12 @@ export default function App() {
   };
 
   const handleChangeStatus = async () => {
-    const response = await fetch(`http://localhost:3000/change/${id}`, {
-      method: "PATCH",
-    });
+    const response = await fetch(
+      `https://gobasera-r2.onrender.com/change/${id}`,
+      {
+        method: "PATCH",
+      }
+    );
 
     const data = await response.json();
     alert(data.message);
@@ -88,7 +91,7 @@ export default function App() {
   };
 
   const handleGetAll = async () => {
-    const response = await fetch("http://localhost:3000/all");
+    const response = await fetch("https://gobasera-r2.onrender.com/all");
     const data = await response.json();
     setAnnouncements(data.announcements);
   };
@@ -101,7 +104,7 @@ export default function App() {
     }
 
     const response = await fetch(
-      `http://localhost:3000/announcements/${commentAnnId}/comments`,
+      `https://gobasera-r2.onrender.com/announcements/${commentAnnId}/comments`,
       {
         method: "POST",
         headers: {
@@ -128,7 +131,7 @@ export default function App() {
     }
 
     const response = await fetch(
-      `http://localhost:3000/announcements/${getCommentsId}/comments?limit=${commentsLimit}`
+      `https://gobasera-r2.onrender.com/announcements/${getCommentsId}/comments?limit=${commentsLimit}`
     );
     const data = await response.json();
 
@@ -152,7 +155,7 @@ export default function App() {
       .substr(2, 9)}`;
 
     const response = await fetch(
-      `http://localhost:3000/announcements/${reactionAnnId}/reactions`,
+      `https://gobasera-r2.onrender.com/announcements/${reactionAnnId}/reactions`,
       {
         method: "POST",
         headers: {
@@ -177,7 +180,7 @@ export default function App() {
     }
 
     const response = await fetch(
-      `http://localhost:3000/announcements/${reactionAnnId}/reactions`,
+      `https://gobasera-r2.onrender.com/announcements/${reactionAnnId}/reactions`,
       {
         method: "DELETE",
         headers: {
@@ -197,7 +200,7 @@ export default function App() {
     }
 
     const response = await fetch(
-      `http://localhost:3000/announcements/${getReactionsId}/reactions`
+      `https://gobasera-r2.onrender.com/announcements/${getReactionsId}/reactions`
     );
     const data = await response.json();
 
